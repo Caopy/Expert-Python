@@ -937,8 +937,7 @@ class: inverse
 class: inverse
 ## functools模块
 
-### functools.total_ordering
-
+### functools.total_ordering(一)
 ```
 >>> @total_ordering
 ... class Test:
@@ -948,13 +947,23 @@ class: inverse
 ...         return self.value < other.value
 ...
 >>> vars(Test) # 注意哦  没有__eq__
-{'__module__': '__main__', '__le__': <function __le__ at 0x105b26500>, '__ge__': <function __ge__ at 0x105b26578>, '__gt__': <function __gt__ at 0x105b23b90>, '__lt__': <function __lt__ at 0x105b26488>, '__doc__': None, '__init__': <function __init__ at 0x105b26410>}
+{'__module__': '__main__', '__le__': <function __le__ at 0x105b26500>,
+'__ge__': <function __ge__ at 0x105b26578>,
+'__gt__': <function __gt__ at 0x105b23b90>,
+'__lt__': <function __lt__ at 0x105b26488>, '__doc__': None,
+'__init__': <function __init__ at 0x105b26410>}
 >>> Test(1) < Test(2)
 True
 >>> Test(3) < Test(2)
 False
 >>> Test(2) <= Test(2) # 看 答案不对
 False
+```
+---
+class: inverse
+## functools模块
+### functools.total_ordering(二)
+```
 >>> @total_ordering
 ... class Test:
 ...     def __init__(self, value):
