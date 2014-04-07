@@ -443,7 +443,7 @@ coroutine start...
 'result: first'
 >>> c.send("second")
 'result: second'
->>> c.close() # 关闭协程,使其退出。或⽤用 c.throw() 使其引发异常
+>>> c.close() # 关闭协程,使其退出。或⽤c.throw() 使其引发异常
 >>> c.send("never recv")
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
@@ -925,7 +925,7 @@ hello world
 ```
 ---
 class: inverse
-## 模块: itertools
+## 模块: itertools(一)
 ```
 >>> def chunker(items, chunk_size):
 ...     for _key, group in itertools.groupby(
@@ -939,13 +939,31 @@ class: inverse
 >>> l = [(1, 10), (2, 10), (3, 20), (4, 20)]
 >>> for key, group in itertools.groupby(l, lambda t: t[1]):
 ...     print(key, list(group))
+(10, [(1, 10), (2, 10)])
+(20, [(3, 20), (4, 20)])
+```
+### chain: 把多个迭代器合并成一个迭代器
+### islice: 迭代器分片islice(func, start, end, step)
+---
+class: inverse
+## 模块: itertools(二)
+```
+>>> def chunker(items, chunk_size):
+...     args = [iter(items)] * chunk_size
+...     return itertools.izip_longest(*args)
+... 
+>>> for i in chunker(range(10), 4):
+...     print filter(lambda x:x, list(i))
+... 
+[1, 2, 3]
+[4, 5, 6, 7]
+[8, 9]
 ```
 ---
 class: inverse
 ## 模块: collections(一)
 ```
->>> words = re.findall(r'\w+', open('hamlet.txt').read().lower())
->>> collections.Counter(words).most_common(10)
+>>> collections.Counter(words).most_common(10) #word就是个单词列表
 [('the', 1143), ('and', 966), ('to', 762), ('of', 669), ('i', 631),
  ('you', 554),  ('a', 546), ('my', 514), ('hamlet', 471), ('in', 451)]
  >>> Q = collections.deque()
@@ -1081,8 +1099,10 @@ class: inverse
 ## operator模块(三)
 ```
 >>> class a:
+...     '''a"s doc'''
 ...     class b:
 ...         c = 1
+... 
 >>> a.b.c
 1
 >>> reduce(getattr, 'b.c'.split('.'), a)
@@ -1091,7 +1111,7 @@ class: inverse
 >>> attrgetter('b.c')(a)
 1
 >>> attrgetter('b', '__doc__')(a)
-(<class __main__.b at 0x103657d50>, None)
+(<class __main__.b at 0x10e563d50>, 'a"s doc')
 ```
 ---
 class: inverse
@@ -1190,11 +1210,10 @@ class: inverse
 ...         return self.value < other.value
 ...
 >>> vars(Test) # 注意哦  没有__eq__
-{'__module__': '__main__', '__le__': <function __le__ at 0x105b26500>, 
-'__ge__': <function __ge__ at 0x105b26578>, 
-'__gt__': <function __gt__ at 0x105b23b90>,
-'__lt__': <function __lt__ at 0x105b26488>, '__doc__': None,
-'__init__': <function __init__ at 0x105b26410>}
+{'__module__': '__main__',
+'__le__': <function __le__ at 0x105b26500>, '__ge__': <function __ge__ at 0x105b26578>, 
+'__gt__': <function __gt__ at 0x105b23b90>, '__lt__': <function __lt__ at 0x105b26488>,
+'__doc__': None, '__init__': <function __init__ at 0x105b26410>}
 >>> Test(1) < Test(2)
 True
 >>> Test(3) < Test(2)
@@ -1311,7 +1330,7 @@ class: inverse
 class: center, middle, inverse
 # Q &amp; A
 ---
-class: inverse
+class: center, middle, inverse
 ## 联系方式
 
 ### Website: [小明明s à domicile](http://www.dongwm.com)
