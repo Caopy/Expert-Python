@@ -117,13 +117,13 @@ class: inverse
 ## 操作字典
 
 ```
->>> dict((["a", 1], ["b", 2])) # ⽤用两个序列类型构造字典
+>>> dict((["a", 1], ["b", 2])) # ⽤两个序列类型构造字典
 {'a': 1, 'b': 2}
 >>> dict(zip("ab", range(2)))
 {'a': 0, 'b': 1}
 >>> dict(map(None, "abc", range(2)))
 {'a': 0, 'c': None, 'b': 1}
->>> dict.fromkeys("abc", 1) # ⽤用序列做 key,并提供默认 value
+>>> dict.fromkeys("abc", 1) # ⽤序列做 key,并提供默认 value
 {'a': 1, 'c': 1, 'b': 1}
 >>> {k:v for k, v in zip("abc", range(3))} # 字典解析
 {'a': 0, 'c': 2, 'b': 1}
@@ -1204,6 +1204,23 @@ False
 ```
 ---
 class: inverse
+## functools模块
+### functools.total_ordering(二)
+```
+>>> @total_ordering
+... class Test:
+...     def __init__(self, value):
+...         self.value = value
+...     def __lt__(self, other):
+...         return self.value < other.value
+...     def __eq__(self, other):
+...         return self.value == other.value
+...
+>>> Test(2) <= Test(2) # 答案这次对了
+True
+```
+---
+class: inverse
 ## 开发陷阱(一) 可变默认参数
 ```
 >>> def append_to(element, to=[]):
@@ -1265,23 +1282,6 @@ from operator import mul
 
 def create_multipliers():
     return [partial(mul, i) for i in range(5)]
-```
----
-class: inverse
-## functools模块
-### functools.total_ordering(二)
-```
->>> @total_ordering
-... class Test:
-...     def __init__(self, value):
-...         self.value = value
-...     def __lt__(self, other):
-...         return self.value < other.value
-...     def __eq__(self, other):
-...         return self.value == other.value
-...
->>> Test(2) <= Test(2) # 答案这次对了
-True
 ```
 ---
 class: center, middle, inverse
