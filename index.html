@@ -30,7 +30,29 @@ class: middle, inverse, center
 # 高级编程
 ### Dongweiming
 2014.4.2
+---
+class: middle, inverse, center
+## XX不理解python竟然没有end....
+---
+class: inverse
+### 其实 可以有...
+```
+__builtins__.end = None
 
+def test(x):
+    if x > 0:
+        print "a"
+    else:
+        print "b"
+    end
+end
+
+
+def main():
+    test(1)
+    print('I can use end!')
+end
+```
 ---
 class: inverse
 ## 设置全局变量
@@ -82,6 +104,14 @@ class: inverse
 ```
 
 ([PEP3101](http://legacy.python.org/dev/peps/pep-3101/))
+---
+class: inverse
+## 操作列表
+```
+>>> l = [1,2,2,3,3,3]
+>>> {}.fromkeys(l).keys()
+[1, 2, 3] # 列表去重
+```
 ---
 class: inverse
 ## 操作字典
@@ -141,6 +171,160 @@ True
 >>> vars(sys) is sys.__dict__
 True
 ```
+---
+class: inverse
+## from __future__ import unicode_literals
+```
+>>> s = '美的'
+>>> s
+'\xe7\xbe\x8e\xe7\x9a\x84'
+>>> from __future__ import unicode_literals
+>>> s = '美的'
+>>> s
+u'\u7f8e\u7684'
+>>> s.encode('utf-8')
+'\xe7\xbe\x8e\xe7\x9a\x84'
+>>> s = b'美的'
+>>> s
+'\xe7\xbe\x8e\xe7\x9a\x84'
+>>> type(s)
+<type 'str'>
+```
+---
+class: inverse
+## from __future__ import absolute_import
+## 不是支持了绝对引入,而是拒绝隐式引入
+```
+$cat for_absolute_import/string.py
+a = 1
+$cat for_absolute_import/main.py            
+import string # 其实我们要的是当前目录下的string模块
+>>> from for_absolute_import.main import string
+>>> string # 是隐式引入的
+<module 'for_absolute_import.string' from 'for_absolute_import/string.py'>
+>>> 1
+1
+## 我来修改下
+$cat for_absolute_import/main.py
+from __future__ import absolute_import                                                                                                                                            
+import string
+>>> from for_absolute_import.main import string
+>>> string # 看这里其实还是在用string模块
+<module 'string' from '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/string.pyc'>
+```
+---
+class: inverse
+## 我靠,我的需求呢? -- 在很多开源项目是拒绝你第一次的隐式用法的,
+## 比如celery
+## 来点标准做法:
+```
+from __future__ import absolute_import
+from .string import a # 比较常用的风格
+from for_absolute_import.string import a \
+# 官方推荐的风格,强烈建议这样的风格
+```
+---
+class: inverse
+## 一个关于编码的问题
+```
+$cat encoding_example.py 
+# encoding: utf-8
+name = 'helló wörld from example'
+$cat encoding.py 
+# encoding: utf-8
+from __future__ import unicode_literals
+import encoding_example as a
+b = 'helló wörld from this'
+print b + a.name
+$python encoding.py 
+Traceback (most recent call last):
+  File "encoding.py", line 6, in <module>
+    print b + a.name
+UnicodeDecodeError: 'ascii' codec can't decode byte 0xc3 
+in position 4: ordinal not in range(128)
+```
+---
+class: inverse
+## 原因是: encoding_example里面没有对文字自动转化为unicode,默认是ascii编码
+```
+$cat encoding.py 
+# encoding: utf-8
+
+from __future__ import unicode_literals
+import encoding_example as a
+b = 'helló wörld from this'
+print b + a.name.decode('utf-8')
+```
+---
+class: inverse
+## super 当子类调用父类属性时一般的做法是这样
+```
+>>> class LoggingDict(dict): 
+...     def __setitem__(self, key, value):
+...         print('Setting %r to %r' % (key, value))
+...         dict.__setitem__(key, value)                                                                                   
+```
+### 问题是假如你继承的不是dict而是其他,那么就要修改2处,其实可以这样
+```
+>>> class LoggingDict(dict):
+...     def __setitem__(self, key, value):
+...         print('Setting %r to %r' % (key, value))
+...         super(LoggingDict, self).__setitem__(key, value)
+```
+
+### 感觉super自动找到了LoggingDict的父类(dict)，然后把self转化为其实例
+---
+class: inverse
+## super的一种用法
+```
+class Root(object):
+    def draw(self):
+        assert not hasattr(super(Root, self), 'draw')
+
+class Shape(Root):
+    def __init__(self, shapename, **kwargs):
+        self.shapename = shapename
+        super(Shape, self).__init__(**kwargs)
+    def draw(self):
+        print('Drawing.  Setting shape to:', self.shapename)
+        super(Shape, self).draw()
+
+class ColoredShape(Shape):
+    def __init__(self, color, **kwargs):
+        self.color = color
+        super(ColoredShape, self).__init__(**kwargs)
+    def draw(self):
+        print('Drawing.  Setting color to:', self.color)
+        super(ColoredShape, self).draw()
+
+cs = ColoredShape(color='blue', shapename='square')
+cs.draw()
+Drawing.  Setting color to: blue
+Drawing.  Setting shape to: square
+```
+---
+class: inverse
+## 假如不用super会这么惨
+```
+class Root(object):
+    def draw(self):
+        assert not hasattr(self, 'draw')
+
+class Shape(Root):
+    def __init__(self, shapename, **kwargs):
+        self.shapename = shapename
+    def draw(self):
+        print('Drawing.  Setting shape to:', self.shapename)
+
+class ColoredShape(Shape):
+    def __init__(self, color, **kwargs):
+        self.color = color
+        self.shape = Shape(**kwargs)
+    def draw(self):
+        print('Drawing.  Setting color to:', self.color)
+        self.shape.draw()
+```
+### 你要一次次的把父类调用传进来赋值给实例属性再调用
 ---
 class: inverse
 ## 手写一个迭代器
@@ -545,24 +729,26 @@ class: inverse
 ### 给类的函数装饰器
 
 ```
->>> def singleton(cls):
-...     class deco(cls):
-...         def __new__(cls, *args, **kwargs):
-...             o = getattr(cls, "__instance__", None)
-...             if o is None:
-...                 o = object.__new__(cls)
-...                 cls.__instance__ = o
-...             return o
-...     return deco
->>> @singleton
+>>> def borg(cls):
+...     cls._state = {}
+...     orig_init = cls.__init__
+...     def new_init(self, *args, **kwargs):
+...         self.__dict__ = cls._state
+...         orig_init(self, *args, **kwargs)
+...     cls.__init__ = new_init
+...     return cls
+>>> @borg
 ... class A(object):
 ...     def common(self):
 ...         print hex(id(self))
 >>> a, b = A(), A()
->>> a is b
-True
->>> a.common()
-0x10d9a6350
+>>> b.d
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'A' object has no attribute 'd'
+>>> a.d = 1
+>>> b.d
+1
 ```
 ---
 class: inverse
@@ -739,6 +925,23 @@ hello world
 ```
 ---
 class: inverse
+## 模块: itertools
+```
+>>> def chunker(items, chunk_size):
+...     for _key, group in itertools.groupby(
+...         enumerate(items), lambda x: x[0] // chunk_size):
+...             yield [g[1] for g in group]
+>>> for i in chunker(range(10), 4):
+...     print list(i)
+[0, 1, 2, 3]
+[4, 5, 6, 7]
+[8, 9]
+>>> l = [(1, 10), (2, 10), (3, 20), (4, 20)]
+>>> for key, group in itertools.groupby(l, lambda t: t[1]):
+...     print(key, list(group))
+```
+---
+class: inverse
 ## 模块: collections(一)
 ```
 >>> words = re.findall(r'\w+', open('hamlet.txt').read().lower())
@@ -830,7 +1033,30 @@ class: inverse
 ```
 ---
 class: inverse
-## operator模块
+## operator模块(一)
+### 用operator写伪lisp
+```
+>>> reduce(+, (5, 4, 3, 2, 1))
+  File "<stdin>", line 1
+    reduce(+, (5, 4, 3, 2, 1))
+            ^
+SyntaxError: invalid syntax
+>>> reduce(operator.add, (5, 4, 3, 2, 1))
+15
+>>> def f(op, *args):
+...     return {
+...         '+' : operator.add,
+...         '-' : operator.sub,
+...         '*' : operator.mul,
+...         '/' : operator.div,
+...         '%' : operator.mod 
+...     }[op](*args)
+>>> f('*', f('+', 1, 2), 3)
+9
+```
+---
+class: inverse
+## operator模块(二)
 ```
 >>> l = [1, 2, 3, 4, 5]
 >>> operator.itemgetter(1)(l)
@@ -849,6 +1075,23 @@ hello world
 'darwin'
 >>> operator.attrgetter('platform', 'maxint')(sys)
 ('darwin', 9223372036854775807)
+```
+---
+class: inverse
+## operator模块(三)
+```
+>>> class a:
+...     class b:
+...         c = 1
+>>> a.b.c
+1
+>>> reduce(getattr, 'b.c'.split('.'), a)
+1
+>>> from operator import attrgetter
+>>> attrgetter('b.c')(a)
+1
+>>> attrgetter('b', '__doc__')(a)
+(<class __main__.b at 0x103657d50>, None)
 ```
 ---
 class: inverse
@@ -893,7 +1136,7 @@ class: inverse
 
 ```
 >>> def common(func):
-...     @wraps(func) # 注意这句
+...     #@wraps(func) # 注意这句
 ...     def _deco(*args, **kwargs):
 ...         '''In _deco'''
 ...         return func(*args, **kwargs)
@@ -947,8 +1190,8 @@ class: inverse
 ...         return self.value < other.value
 ...
 >>> vars(Test) # 注意哦  没有__eq__
-{'__module__': '__main__', '__le__': <function __le__ at 0x105b26500>,
-'__ge__': <function __ge__ at 0x105b26578>,
+{'__module__': '__main__', '__le__': <function __le__ at 0x105b26500>, 
+'__ge__': <function __ge__ at 0x105b26578>, 
 '__gt__': <function __gt__ at 0x105b23b90>,
 '__lt__': <function __lt__ at 0x105b26488>, '__doc__': None,
 '__init__': <function __init__ at 0x105b26410>}
@@ -958,6 +1201,70 @@ True
 False
 >>> Test(2) <= Test(2) # 看 答案不对
 False
+```
+---
+class: inverse
+## 开发陷阱(一) 可变默认参数
+```
+>>> def append_to(element, to=[]):
+...     to.append(element)
+...     return to
+... 
+>>> my_list = append_to(12)
+>>> my_list
+[12]
+>>> my_other_list = append_to(42)
+>>> my_other_list
+[12, 42] # Oh, no~
+```
+### 原因: 函数创建是其to及创建(一次性的),以后调用都是操作这个列表
+```
+def append_to(element, to=None):
+    if to is None:
+        to = []
+    to.append(element)
+    return to
+```
+---
+class: inverse
+## 开发陷阱(二) 闭包变量绑定
+```
+>>> def create_multipliers():
+...     return [lambda x : i * x for i in range(5)]
+... 
+>>> for multiplier in create_multipliers():
+...     print multiplier(2)
+... 
+8
+8
+8
+8
+8
+### 看下面的例子
+>>> def create_multipliers():
+...     s = [lambda x : i * x for i in range(5)]
+...     print locals()['i']
+...     return s
+... 
+>>> create_multipliers()
+4 # 是的 i其实在循环后已经变成了常量4
+[<function <lambda> at 0x10b654b18>, <function <lambda> at 0x10b654b90>,
+<function <lambda> at 0x10b654c08>, <function <lambda> at 0x10b654c80>,
+<function <lambda> at 0x10b654de8>]
+```
+---
+class: inverse
+## 开发陷阱(二) 闭包应该的用法
+```
+>>> def create_multipliers():
+...     return [lambda x, i=i : i * x for i in range(5)]
+... 
+或者这样:
+from functools import partial
+from operator import mul
+
+def create_multipliers():
+    return [partial(mul, i) for i in range(5)]
 ```
 ---
 class: inverse
@@ -983,10 +1290,11 @@ class: center, middle, inverse
 ## 2. 不是它不好,而是你没有用好
 ---
 class: inverse
-# 其他用python的技巧
-## 1. ipython的autoreload(不需要退出交互模式在重新import,类似于tornado的autoreload)
-## 2. ipython的storemagic(存储对象,下次进入交互模式继续使用)
-## 3. python/ipython交互模式历史记录搜索
+## ipython的技巧(一)
+### 1. ipython的autoreload(不需要退出交互模式在重新import,类似于tornado的autoreload)
+### 2. ipython的storemagic(存储对象,下次进入交互模式继续使用)
+### 3. ipython的save(保存某些历史记录到某文件里面)
+### 4. python/ipython交互模式历史记录搜索
 ```
 $cat ~/.inputrc
 ## arrow up
@@ -994,6 +1302,11 @@ $cat ~/.inputrc
 ## arrow down
 "\e[B":history-search-forward
 ```
+---
+class: inverse
+## ipython的技巧(二)
+### 5. ipython的logstart(会话记录, 退出后ipython -i ipython_log.py获取原来的会话)
+### 6. ipython的pastebin(将执行命令保存到github的gist)
 ---
 class: center, middle, inverse
 # Q &amp; A
