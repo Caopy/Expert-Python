@@ -455,8 +455,27 @@ async: mylogic
 ```
 ---
 class: inverse
+## 实现一个with上下文管理类(自动关闭mongodb连接)
+```
+>>> import pymongo
+>>> class Operation(object):
+...     def __init__(self, database,
+...                  host='localhost', port=27017):
+...         self._db = pymongo.MongoClient(
+...                       host, port)[database]
+...     def __enter__(self):
+...         return self._db
+...     def __exit__(self, exc_type, exc_val, exc_tb):
+...         self._db.connection.disconnect()
+...
+>>> with Operation(database='test') as db:
+...     print db.test.find_one()
+...
+{u'a': 0.9075717522597431, u'_id': ObjectId('52e0da5cc23e7dbdb0a1ec36')}
+```
+---
+class: inverse
 ## 看到这里, 就得说说contextmanager
-
 ```
 @contextlib.contextmanager
 def some_generator(<arguments>):
@@ -478,6 +497,66 @@ with some_generator(<arguments>) as <variable>:
         <body>
     finally:
         <cleanup>
+```
+---
+class: inverse
+## contextmanager例子(一)
+```
+>>> lock = threading.Lock()
+>>> @contextmanager
+... def openlock():
+...     print('Acquire')
+...     lock.acquire()
+...     yield
+...     print('Releasing')
+...     lock.release()
+... 
+>>> with openlock():
+...     print('Lock is locked: {}'.format(lock.locked()))
+...     print 'Do some stuff'
+... 
+Acquire
+Lock is locked: True
+Do some stuff
+Releasing
+```
+---
+class: inverse
+## contextmanager例子(二)
+```
+>>> @contextmanager
+... def openlock2():
+...     print('Acquire')
+...     with lock: # threading.Lock其实就是个with的上下文管理器.
+...         # __enter__ = acquire
+...         yield
+...     print('Releasing')
+... 
+>>> with openlock2():
+...     print('Lock is locked: {}'.format(lock.locked()))
+...     print 'Do some stuff'
+... 
+Acquire
+Lock is locked: True
+Do some stuff
+Releasing
+```
+---
+class: inverse
+## contextmanager例子(三)
+```
+>>> @contextmanager
+... def operation(database, host='localhost', 
+				  port=27017):
+...     db = pymongo.MongoClient(host, port)[database]
+...     yield db
+...     db.connection.disconnect()
+... 
+>>> import pymongo
+>>> with operation('test') as db:
+...     print(db.test.find_one())
+... 
+{u'a': 0.9075717522597431, u'_id': ObjectId('52e0da5cc23e7dbdb0a1ec36')}
 ```
 ---
 class: inverse
