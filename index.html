@@ -4,15 +4,6 @@
     <meta charset="utf-8">
     <title>python高级编程</title>
     <link rel="stylesheet" href="css/default.css" media="screen">
-	<style>
-	@font-face {
-	   font-family: 'Wawa';
-	   src: url('fonts/wawa.eot'); /* IE9 Compat Modes */
-       src: url('fonts/wawa.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
-           url('fonts/wawa.woff') format('woff'), /* Modern Browsers */
-           url('fonts/wawa.ttf')  format('truetype'); /* Safari, Android, iOS */
-	  }
-	</style>
   </head>
   <body>
     <textarea id="source">
@@ -106,11 +97,23 @@ class: inverse
 ([PEP3101](http://legacy.python.org/dev/peps/pep-3101/))
 ---
 class: inverse
-## 操作列表
+## 列表去重
 ```
->>> l = [1,2,2,3,3,3]
+>>> l = [1, 2, 2, 3, 3, 3]
 >>> {}.fromkeys(l).keys()
-[1, 2, 3] # 列表去重
+[1, 2, 3] # 列表去重(1)
+>>> list(set(l)) # 列表去重(2)
+[1, 2, 3]
+In [2]: %timeit list(set(l))
+1000000 loops, best of 3: 956 ns per loop
+In [3]: %timeit {}.fromkeys(l).keys()
+1000000 loops, best of 3: 1.1 µs per loop
+In [4]: l = [random.randint(1, 50) for i in range(10000)]
+In [5]: %timeit list(set(l))
+1000 loops, best of 3: 271 µs per loop
+In [6]: %timeit {}.fromkeys(l).keys()
+1000 loops, best of 3: 310 µs per loop 
+PS: 在字典较大的情况下, 列表去重(1)略慢了
 ```
 ---
 class: inverse
@@ -173,7 +176,7 @@ True
 ```
 ---
 class: inverse
-## from __future__ import unicode_literals
+### from \_\_future\_\_ import unicode_literals
 ```
 >>> s = '美的'
 >>> s
@@ -192,8 +195,8 @@ u'\u7f8e\u7684'
 ```
 ---
 class: inverse
-## from __future__ import absolute_import
-## 不是支持了绝对引入,而是拒绝隐式引入
+### from \_\_future\_\_ import absolute_import
+### 不是支持了绝对引入,而是拒绝隐式引入
 ```
 $cat for_absolute_import/string.py
 a = 1
@@ -214,7 +217,7 @@ import string
 ```
 ---
 class: inverse
-## 我靠,我的需求呢? -- 在很多开源项目是拒绝你第一次的隐式用法的,
+## 我靠,我的需求呢? -- 在很多开源项目是拒绝你的隐式用法的,
 ## 比如celery
 ## 来点标准做法:
 ```
@@ -250,10 +253,14 @@ class: inverse
 $cat encoding.py 
 # encoding: utf-8
 
-from __future__ import unicode_literals
-import encoding_example as a
-b = 'helló wörld from this'
-print b + a.name.decode('utf-8')
+>>> from __future__ import unicode_literals
+>>> import encoding_example as a
+>>> b = 'helló wörld from this'
+>>> print b + a.name.decode('utf-8')
+helló wörld from thishelló wörld from example
+>>> # 或者这样用:
+>>> print b.encode('utf-8') + a.name
+helló wörld from thishelló wörld from example
 ```
 ---
 class: inverse
@@ -261,70 +268,18 @@ class: inverse
 ```
 >>> class LoggingDict(dict): 
 ...     def __setitem__(self, key, value):
-...         print('Setting %r to %r' % (key, value))
+...         print('Setting {0} to {1}'.format(key, value))
 ...         dict.__setitem__(key, value)                                                                                   
 ```
 ### 问题是假如你继承的不是dict而是其他,那么就要修改2处,其实可以这样
 ```
 >>> class LoggingDict(dict):
 ...     def __setitem__(self, key, value):
-...         print('Setting %r to %r' % (key, value))
+...         print('Setting {0} to {1}'.format(key, value))
 ...         super(LoggingDict, self).__setitem__(key, value)
 ```
 
-### 感觉super自动找到了LoggingDict的父类(dict)，然后把self转化为其实例
----
-class: inverse
-## super的一种用法
-```
-class Root(object):
-    def draw(self):
-        assert not hasattr(super(Root, self), 'draw')
-
-class Shape(Root):
-    def __init__(self, shapename, **kwargs):
-        self.shapename = shapename
-        super(Shape, self).__init__(**kwargs)
-    def draw(self):
-        print('Drawing.  Setting shape to:', self.shapename)
-        super(Shape, self).draw()
-
-class ColoredShape(Shape):
-    def __init__(self, color, **kwargs):
-        self.color = color
-        super(ColoredShape, self).__init__(**kwargs)
-    def draw(self):
-        print('Drawing.  Setting color to:', self.color)
-        super(ColoredShape, self).draw()
-
-cs = ColoredShape(color='blue', shapename='square')
-cs.draw()
-Drawing.  Setting color to: blue
-Drawing.  Setting shape to: square
-```
----
-class: inverse
-## 假如不用super会这么惨
-```
-class Root(object):
-    def draw(self):
-        assert not hasattr(self, 'draw')
-
-class Shape(Root):
-    def __init__(self, shapename, **kwargs):
-        self.shapename = shapename
-    def draw(self):
-        print('Drawing.  Setting shape to:', self.shapename)
-
-class ColoredShape(Shape):
-    def __init__(self, color, **kwargs):
-        self.color = color
-        self.shape = Shape(**kwargs)
-    def draw(self):
-        print('Drawing.  Setting color to:', self.color)
-        self.shape.draw()
-```
-### 你要一次次的把父类调用传进来赋值给实例属性再调用
+### PS: 感觉super自动找到了LoggingDict的父类(dict)，然后把self转化为其实例
 ---
 class: inverse
 ## 手写一个迭代器
@@ -459,7 +414,7 @@ class: inverse
 ...     s = logic()
 ...     print "[FX] logic: ", s
 ...     print "[FX] do something"
-...     callback("async:" + s)
+...     callback("async: " + s)
 ...
 >>> def logic():
 ...     s = "mylogic"
@@ -471,7 +426,7 @@ class: inverse
 >>> framework(logic, callback)
 [FX] logic:  mylogic
 [FX] do something
-async:mylogic
+async: mylogic
 ```
 ---
 class: inverse
@@ -484,7 +439,7 @@ class: inverse
 ...         s = next(it)
 ...         print "[FX] logic: ", s
 ...         print "[FX] do something"
-...         it.send("async:" + s)
+...         it.send("async: " + s)
 ...     except StopIteration:
 ...          pass
 ...
@@ -496,7 +451,7 @@ class: inverse
 >>> framework(logic)
 [FX] logic:  mylogic
 [FX] do something
-async:mylogic
+async: mylogic
 ```
 ---
 class: inverse
@@ -591,14 +546,9 @@ class: inverse
 ...     @classmethod
 ...     def c(cls):
 ...         print 'c'
-...
 >>> u = User()
->>> u.a()
-a
->>> u.b()
-b
->>> u.c()
-c
+>>> u.a(), u.b(), u.c()
+(a, b, c)
 >>> User.a()
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
@@ -621,26 +571,23 @@ class: inverse
 ...     @classmethod
 ...     def c(cls):
 ...         print cls.a
-...
 >>> u = User()
 >>> u.b()
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
   File "<stdin>", line 5, in b
 NameError: global name 'self' is not defined
->>> u.c()
-1
->>> User.c()
-1
 >>> User.b()
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
   File "<stdin>", line 5, in b
 NameError: global name 'self' is not defined
+>>> u.c(), User.c()
+(1, 1)
 ```
 ---
 class: inverse
-## \_\_slots\_\_
+## \_\_slots\_\_ 大量属性时减少内存占用
 
 ```
 >>> class User(object):
@@ -827,6 +774,99 @@ class: inverse
 >>> c.voltage = 200
 >>> c.voltage
 200
+```
+---
+class: inverse
+## 描述符
+###1. 当希望对某些类的属性进行特别的处理而不会对整体的其他属性有影响的话,可以使用描述符
+###2. 只要一个类实现了\_\_get\_\_、\_\_set\_\_、\_\_delete\_\_方法就是描述符
+###3. 描述符会"劫持"那些本对于self.\_\_dict\_\_的操作
+###4. 把一个类的操作托付与另外一个类
+###5. 静态方法, 类方法, property都是构建描述符的类
+---
+class: inverse
+## 描述符的例子
+```
+>>> class MyDescriptor(object):
+...     _value = ''
+...     def __get__(self, instance, klass):
+...         return self._value
+...     def __set__(self, instance, value):
+...         self._value = value.swapcase()
+>>> class Swap(object):
+...     swap = MyDescriptor()
+>>> instance = Swap()
+>>> instance.swap
+''
+>>> # 对swap的属性访问被描述符类重载了
+>>> instance.swap = 'make it swap'
+>>> instance.swap
+'MAKE IT SWAP'
+>>> instance.__dict__ # 没有用到__dict__:被劫持了
+{} 
+```
+---
+class: inverse
+## 深入描述符
+```
+>>> def t(): # 随便定义个函数(或者lambda匿名函数)
+...     pass
+... 
+>>> dir(t)
+['__call__', '__class__', '__closure__', '__code__',
+'__defaults__', '__delattr__', '__dict__', '__doc__',
+'__format__', '__get__', '__getattribute__', '__globals__',
+'__hash__', '__init__', '__module__', '__name__', '__new__',
+'__reduce__', '__reduce_ex__', '__repr__', '__setattr__',
+'__sizeof__', '__str__', '__subclasshook__', 'func_closure',
+'func_code', 'func_defaults', 'func_dict', 'func_doc',
+'func_globals', 'func_name']
+注意: **t有__get__方法.**
+总结: 所有 Python 函数都默认是一个描述符. 
+这个描述符的特性在"类"这一对象上下文之外没有任何意义，
+但只要到了类中:
+instance.swap变成了:
+Swap.__dict__['swap'].__get__(instance, Swap)
+```
+---
+class: inverse
+## 一个开源实现
+```
+>>> class cached_property(object):
+...     # from werkzeug.utils import cached_property
+...     def __init__(self, func, name=None, doc=None):
+...         self.__name__ = name or func.__name__
+...         self.__module__ = func.__module__
+...         self.__doc__ = doc or func.__doc__
+...         self.func = func
+...     def __get__(self, obj, type=None):
+...         if obj is None:
+...             return self
+...         value = obj.__dict__.get(self.__name__, _missing)
+...         if value is _missing:
+...             value = self.func(obj)
+...             obj.__dict__[self.__name__] = value
+...         return value
+```
+---
+class: inverse
+## 用python实现静态方法和类方法
+```
+>>> class myStaticMethod(object):
+...     def __init__(self, method):
+...         self.staticmethod = method
+...     def __get__(self, object, type=None):
+...         return self.staticmethod
+... 
+>>> class myClassMethod(object):
+...     def __init__(self, method):
+...         self.classmethod = method
+...     def __get__(self, object, klass=None):
+...         if klass is None:
+...             klass = type(object)
+...         def newfunc(*args):
+...             return self.classmethod(klass, *args)
+...         return newfunc
 ```
 ---
 class: center, middle, inverse
