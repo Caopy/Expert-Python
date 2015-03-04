@@ -269,7 +269,7 @@ class: inverse
 >>> class LoggingDict(dict): 
 ...     def __setitem__(self, key, value):
 ...         print('Setting {0} to {1}'.format(key, value))
-...         dict.__setitem__(key, value)                                                                                   
+...         dict.__setitem__(self, key, value)                                                                                   
 ```
 ### 问题是假如你继承的不是dict而是其他,那么就要修改2处,其实可以这样
 ```
